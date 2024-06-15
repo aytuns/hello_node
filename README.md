@@ -4,4 +4,4 @@ This project is a simple express "Hello World" webpage with a beautiful color-ch
 
 ## Installation
 
-To use this webpage, install express, and run 'node app.js'.
+To use this webpage, install express, and run "node app.js"
