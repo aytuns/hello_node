@@ -23,11 +23,11 @@ jobs:
         with:
           eslint: true
 
-      # - name: Run build
-      #   run: npm run build --if-present
+      - name: Run build
+        run: npm run build --if-present
 
-      # - name: Run test
-      #   run: npm test
+      - name: Run test
+        run: npm test
 
-      - name: Run the app
-        run: node app.js
+      # - name: Run the app
+      #   run: node app.js
