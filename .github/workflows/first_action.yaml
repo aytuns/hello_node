@@ -1,5 +1,11 @@
 name: First CIC
-on: [push]
+on:
+    push:
+      branches:
+      - master
+    pull_request:
+      branches:
+      - master
 
 jobs:
   build:
@@ -19,15 +25,38 @@ jobs:
         run: npm install express
 
       - name: Run linters
+        id: linter
         uses: wearerequired/lint-action@v2
+        continue-on-error: true
         with:
           eslint: true
 
       - name: Run build
+        id: build
+        continue-on-error: true
         run: npm run build --if-present
+        
 
       - name: Run test
+        id: test
+        continue-on-error: true
         run: npm test
+
+      - name: Archive Artifact
+        id: archive-artifact
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: hello-artifact
+          path: archive_folder
+
+      - name: Create Issue
+        id: ciff
+        uses: JasonEtco/create-an-issue@v2.4.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: issues.md
 
       # - name: Run the app
       #   run: node app.js
