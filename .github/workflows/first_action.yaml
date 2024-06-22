@@ -44,13 +44,40 @@ jobs:
           name: hello-artifact
           path: archive_folder
 
-      - name: Create Issue
-        id: issue
-        uses: JasonEtco/create-an-issue@v2.4.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          filename: .github/issues.md
+      - name: Create an issue
+        # if: github.actions.checkout.pull_request && failure()
+        if: failure()
+        steps:
+         - name: Check if issue already exists
+           uses: actions/find-issues@v2
+           id: find-issues
+           with:
+              query: |
+                label:"error"
+                state:open
+                issue_number: ${{ github.issue.number }}
+          
+         - name: Create issue from PR
+           if: steps.find-issues.outputs.issues == '[]'      
+           uses: actions/create-issue@v2
+           with:
+              title: 'Error in workflow: ${{ github.workflow }}'
+              assignee: ${{ payload.sender.login }},
+              body: |
+                Error message: ${{ github.actions.error.message }}
+                PR: ${{ github.pull_request.html_url }}
+                Workflow: ${{ github.workflow.html_url }}
+                labels: 'error, workflow'
+                issue_number: ${{ github.issue.number }}
+
+      - name: Delete an issue
+        # if: github.actions.checkout.pull_request && failure()
+        if: github.issue.state == 'closed'
+        steps:
+          - uses: actions/delete-issue@v2
+            with:
+              issue_number: ${{ github.issue.number }}
+
 
       # - name: Run the app
       #   run: node app.js
