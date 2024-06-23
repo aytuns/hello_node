@@ -1,12 +1,18 @@
 name: First CICD
 on: [push, pull_request]
 
+env:
+    issue_number: ${{ github.issue.number }}
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -43,40 +49,32 @@ jobs:
         with:
           name: hello-artifact
           path: archive_folder
-
-      - name: Create an issue
-        # if: github.actions.checkout.pull_request && failure()
-        if: failure()
-        steps:
-         - name: Check if issue already exists
-           uses: actions/find-issues@v2
-           id: find-issues
-           with:
-              query: |
-                label:"error"
-                state:open
-                issue_number: ${{ github.issue.number }}
           
-         - name: Create issue from PR
-           if: steps.find-issues.outputs.issues == '[]'      
-           uses: actions/create-issue@v2
-           with:
-              title: 'Error in workflow: ${{ github.workflow }}'
-              assignee: ${{ payload.sender.login }},
-              body: |
-                Error message: ${{ github.actions.error.message }}
-                PR: ${{ github.pull_request.html_url }}
-                Workflow: ${{ github.workflow.html_url }}
-                labels: 'error, workflow'
-                issue_number: ${{ github.issue.number }}
+      - name: Create an issue
+        uses: actions-ecosystem/action-create-issue@v1
+        if: ${{ failure() }}      
+        with:
+          github_token: ${{ secrets.github_token }}
+          title: 'Error in workflow: ${{ github.workflow }}'
+          body: |
+            Error message: ${{ github.actions.error.message }}
+            PR: ${{ github.pull_request.html_url }}
+            Workflow: ${{ github.workflow.html_url }}
+            labels: 'error, workflow'
+            issue_number: env.issue_number
+
+      - name: Assign an issue        
+        uses: takanome-dev/assign-issue-action@v2.1.1
+        with:
+          github_token: env.github_token
+          trigger: env.issue_number
+          already_assigned_comment: 'This issue is already assigned to someone'
 
       - name: Delete an issue
-        # if: github.actions.checkout.pull_request && failure()
-        if: github.issue.state == 'closed'
-        steps:
-          - uses: actions/delete-issue@v2
-            with:
-              issue_number: ${{ github.issue.number }}
+        uses: actions/delete-issue@v2
+        if: github.issue.state == 'closed' || github.issue.labels.contains('resolved')
+        with:
+         issue_number: ${{ github.issue.number }}
 
 
       # - name: Run the app
