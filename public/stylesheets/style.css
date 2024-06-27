@@ -1,0 +1,23 @@
+@keyframes colorChange {
+  0%, 100% { color: #3498db; }
+  20% { color: #9b59b6; }
+  40% { color: #e74c3c; }
+  60% { color: #f1c40f; }
+  80% { color: #2ecc71; }
+}
+body {
+  font-family: "Lucida Grande", Helvetica, Arial, sans-serif;
+  background-color: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+h1 {
+  font-size: 3rem;
+  animation: colorChange 25s infinite;
+}
+a {
+  color: #00B7FF;
+}
