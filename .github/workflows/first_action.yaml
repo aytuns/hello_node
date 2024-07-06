@@ -144,7 +144,7 @@ jobs:
         run: |
             printf "![Test](https://img.shields.io/badge/Test-${{needs.build.outputs.output_test}}-93b023?&style=for-the-badge) | 
                 ![Lint](https://img.shields.io/badge/Lint-${{needs.build.outputs.output_lint}}-blue?&style=for-the-badge)\n\n
-                pages published at: <${{needs.deploy.outputs.output_url}}> " > README.md
+            GitHub Pages published **[HERE](${{needs.deploy.outputs.output_url}})** " > README.md
 
       - name: pull-request
         uses: repo-sync/pull-request@v2
