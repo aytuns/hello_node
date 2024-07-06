@@ -18,7 +18,8 @@ jobs:
       contents: write           
       pull-requests: write 
     outputs:
-      output1: ${{ steps.test.outcome }}
+      output_test: ${{ steps.test.outcome }}
+      output_lint: ${{ steps.linter.outcome }}
 
     steps:
       - uses: actions/checkout@v4
@@ -73,15 +74,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
-        
-      - name: UPDATE README
-        id: readme
-        continue-on-error: true
-        run: |
-          echo "![Test](https://img.shields.io/badge/Test-${{steps.test.outcome}}-93b023?&style=for-the-badge) | 
-                ![Lint](https://img.shields.io/badge/Lint-${{steps.linter.outcome}}-blue?&style=for-the-badge)" > README.md
-      
+          python-version: "3.9"     
           
       - name: pull-request
         uses: repo-sync/pull-request@v2
@@ -115,7 +108,6 @@ jobs:
           test output: ${{toJson(steps.test)}}\n
           build output: ${{toJson(steps.build)}}\n
           artifact output: ${{toJson(steps.archive_artifact)}}\n
-          readme output: ${{toJson(steps.readme)}}\n
           pullRequest output: ${{toJson(steps.pull_request)}}\n
           commit output: ${{toJson(steps.commit_change)}}\n
           pushChanges output: ${{toJson(steps.push_changes)}}\n
@@ -164,4 +156,12 @@ jobs:
 
       - name: update Comment on Deployment
         run: |
-          printf "publish page: ${{ steps.deployment.outputs.page_url }}"
+          printf "pages published at: ${{ steps.deployment.outputs.page_url }}"
+                    
+      - name: UPDATE README
+        id: readme
+        continue-on-error: true
+        run: |
+          echo "![Test](https://img.shields.io/badge/Test-${{needs.build.outputs.output_test}}-93b023?&style=for-the-badge) | 
+                ![Lint](https://img.shields.io/badge/Lint-${{needs.build.outputs.output_lint}}-blue?&style=for-the-badge)\n
+                pages published at: ${{ steps.deployment.outputs.page_url }}" > README.md
