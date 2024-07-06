@@ -69,20 +69,7 @@ jobs:
             *
             !.**
             !node_modules
-          retention-days: 1
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"     
-          
-      - name: pull-request
-        uses: repo-sync/pull-request@v2
-        id: pull_request
-        continue-on-error: true
-        with:
-          destination_branch: "main"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          retention-days: 1    
 
       - name: update Comments
         run: |
@@ -90,7 +77,6 @@ jobs:
           test output: ${{toJson(steps.test)}}\n
           build output: ${{toJson(steps.build)}}\n
           artifact output: ${{toJson(steps.archive_artifact)}}\n
-          pullRequest output: ${{toJson(steps.pull_request)}}\n
           Run ID: $GITHUB_RUN_ID\n
           Run NUmber: $GITHUB_RUN_NUMBER\n
           Actor: $GITHUB_ACTOR\n
@@ -141,6 +127,14 @@ jobs:
                 ![Lint](https://img.shields.io/badge/Lint-${{needs.build.outputs.output_lint}}-blue?&style=for-the-badge)\n\n
                 ![pages published here] (${{steps.deployment.outputs.page_url}})" > README.md
 
+      - name: pull-request
+        uses: repo-sync/pull-request@v2
+        id: pull_request
+        continue-on-error: true
+        with:
+            destination_branch: "main"
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: commit
         id: commit_change
         continue-on-error: true
@@ -162,7 +156,8 @@ jobs:
       - name: update Comment on Deployment
         run: |
           printf "deployment output: ${{toJson(steps.deployment)}}\n
+          readme output: ${{toJson(steps.readme)}}\n
+          pullRequest output: ${{toJson(steps.pull_request)}}\n
           commit output: ${{toJson(steps.commit_change)}}\n
           push output: ${{toJson(steps.push_changes)}}\n
-          readme output: ${{toJson(steps.readme)}}\n
           pages published at: ${{ steps.deployment.outputs.page_url }}"
