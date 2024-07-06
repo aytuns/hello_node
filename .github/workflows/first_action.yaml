@@ -179,7 +179,7 @@ jobs:
 
       - name: update Comment on Readme push
         run: |
-              readme output: ${{toJson(steps.readme)}}\n
+              printf "readme output: ${{toJson(steps.readme)}}\n
               pullRequest output: ${{toJson(steps.pull_request)}}\n
               commit output: ${{toJson(steps.commit_change)}}\n
-              push output: ${{toJson(steps.push_changes)}}\n
+              push output: ${{toJson(steps.push_changes)}}"
