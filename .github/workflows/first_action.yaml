@@ -162,6 +162,6 @@ jobs:
         id: readme
         continue-on-error: true
         run: |
-          echo "![Test](https://img.shields.io/badge/Test-${{needs.build.outputs.output_test}}-93b023?&style=for-the-badge) | 
-                ![Lint](https://img.shields.io/badge/Lint-${{needs.build.outputs.output_lint}}-blue?&style=for-the-badge)\n
-                pages published at: ${{ steps.deployment.outputs.page_url }}" > README.md
+          printf "![Test](https://img.shields.io/badge/Test-${{needs.build.outputs.output_test}}-93b023?&style=for-the-badge) | 
+                ![Lint](https://img.shields.io/badge/Lint-${{needs.build.outputs.output_lint}}-blue?&style=for-the-badge)\n\n
+                ![pages published here] (${{steps.deployment.outputs.page_url}})" > README.md
