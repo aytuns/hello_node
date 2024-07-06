@@ -84,24 +84,6 @@ jobs:
           destination_branch: "main"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: commit
-        id: commit_change
-        continue-on-error: true
-        run: |
-          git config --global user.email ${{secrets.email}}
-          git config --global user.name ${{secrets.username}}
-          git add .
-          git commit -m "new commit from ${{github.event.pusher.name}}, commit no: $GITHUB_RUN_NUMBER"
-        
-      - name: Push changes
-        if: ${{steps.test.outcome == 'success'}}
-        continue-on-error: true
-        uses: ad-m/github-push-action@master
-        id: push_changes
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
-
       - name: update Comments
         run: |
           printf "linter output: ${{toJson(steps.linter)}}\n
@@ -109,9 +91,6 @@ jobs:
           build output: ${{toJson(steps.build)}}\n
           artifact output: ${{toJson(steps.archive_artifact)}}\n
           pullRequest output: ${{toJson(steps.pull_request)}}\n
-          commit output: ${{toJson(steps.commit_change)}}\n
-          pushChanges output: ${{toJson(steps.push_changes)}}\n
-          Welcome, new contributor!\n
           Run ID: $GITHUB_RUN_ID\n
           Run NUmber: $GITHUB_RUN_NUMBER\n
           Actor: $GITHUB_ACTOR\n
@@ -154,10 +133,24 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: update Comment on Deployment
+      - name: commit
+        id: commit_change
+        continue-on-error: true
         run: |
-          printf "pages published at: ${{ steps.deployment.outputs.page_url }}"
-                    
+          git config --global user.email ${{secrets.email}}
+          git config --global user.name ${{secrets.username}}
+          git add .
+          git commit -m "new commit from ${{github.event.pusher.name}}, commit no: $GITHUB_RUN_NUMBER"
+          
+      - name: Push changes
+        if: ${{needs.build.outputs.output_test == 'success'}}
+        continue-on-error: true
+        uses: ad-m/github-push-action@master
+        id: push_changes
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
       - name: UPDATE README
         id: readme
         continue-on-error: true
@@ -165,3 +158,11 @@ jobs:
           printf "![Test](https://img.shields.io/badge/Test-${{needs.build.outputs.output_test}}-93b023?&style=for-the-badge) | 
                 ![Lint](https://img.shields.io/badge/Lint-${{needs.build.outputs.output_lint}}-blue?&style=for-the-badge)\n\n
                 ![pages published here] (${{steps.deployment.outputs.page_url}})" > README.md
+        
+      - name: update Comment on Deployment
+        run: |
+          printf "deployment output: ${{toJson(steps.deployment)}}\n
+          commit output: ${{toJson(steps.commit_change)}}\n
+          push output: ${{toJson(steps.push_changes)}}\n
+          readme output: ${{toJson(steps.readme)}}\n
+          pages published at: ${{ steps.deployment.outputs.page_url }}"
