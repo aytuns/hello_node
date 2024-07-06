@@ -14,6 +14,11 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:         
+      pull-requests: write
+      contents: write
+
     outputs:
       output_test: ${{ steps.test.outcome }}
       output_lint: ${{ steps.linter.outcome }}
@@ -94,7 +99,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:         
       pull-requests: write
       contents: write
