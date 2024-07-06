@@ -133,6 +133,14 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+      - name: UPDATE README
+        id: readme
+        continue-on-error: true
+        run: |
+          printf "![Test](https://img.shields.io/badge/Test-${{needs.build.outputs.output_test}}-93b023?&style=for-the-badge) | 
+                ![Lint](https://img.shields.io/badge/Lint-${{needs.build.outputs.output_lint}}-blue?&style=for-the-badge)\n\n
+                ![pages published here] (${{steps.deployment.outputs.page_url}})" > README.md
+
       - name: commit
         id: commit_change
         continue-on-error: true
@@ -150,14 +158,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref }}
-
-      - name: UPDATE README
-        id: readme
-        continue-on-error: true
-        run: |
-          printf "![Test](https://img.shields.io/badge/Test-${{needs.build.outputs.output_test}}-93b023?&style=for-the-badge) | 
-                ![Lint](https://img.shields.io/badge/Lint-${{needs.build.outputs.output_lint}}-blue?&style=for-the-badge)\n\n
-                ![pages published here] (${{steps.deployment.outputs.page_url}})" > README.md
         
       - name: update Comment on Deployment
         run: |
