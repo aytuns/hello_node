@@ -92,10 +92,10 @@ jobs:
       group: "pages"
       cancel-in-progress: false
 
-    # Deploy to the github-pages environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    # # Deploy to the github-pages environment
+    # environment:
+    #   name: github-pages
+    #   url: ${{ steps.deployment.outputs.page_url }}
 
     runs-on: ubuntu-latest
 
@@ -104,6 +104,9 @@ jobs:
       contents: write
       pages: write 
       id-token: write   # to verify the deployment originates from an appropriate source
+
+    outputs:
+      output_url: ${{steps.deployment.outputs.page_url}}
 
     steps:
       - name: Checkout
@@ -119,16 +122,34 @@ jobs:
           path: './public'
 
       - name: Deploy to GitHub Pages
+        if: ${{needs.build.outputs.output_test == 'success'}}
         id: deployment
         uses: actions/deploy-pages@v4
+       
+      - name: update Comment on Deployment
+        run: |
+          printf "deployment output: ${{toJson(steps.deployment)}}\n
+          pages published at: ${{ steps.deployment.outputs.page_url }}"
+
+  updatereadme:
+    needs: [build, deploy]
+
+    runs-on: ubuntu-latest
+    permissions:         
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: UPDATE README
         id: readme
         continue-on-error: true
         run: |
-          printf "![Test](https://img.shields.io/badge/Test-${{needs.build.outputs.output_test}}-93b023?&style=for-the-badge) | 
+            printf "![Test](https://img.shields.io/badge/Test-${{needs.build.outputs.output_test}}-93b023?&style=for-the-badge) | 
                 ![Lint](https://img.shields.io/badge/Lint-${{needs.build.outputs.output_lint}}-blue?&style=for-the-badge)\n\n
-                ![pages published here] (${{steps.deployment.outputs.page_url}})" > README.md
+                ![pages published here] (${{needs.deploy.outputs.output_url}})" > README.md
 
       - name: pull-request
         uses: repo-sync/pull-request@v2
@@ -142,25 +163,23 @@ jobs:
         id: commit_change
         continue-on-error: true
         run: |
-          git config --global user.email ${{secrets.email}}
-          git config --global user.name ${{secrets.username}}
-          git add .
-          git commit -m "new commit from ${{github.event.pusher.name}}, commit no: $GITHUB_RUN_NUMBER"
-          
+            git config --global user.email ${{secrets.email}}
+            git config --global user.name ${{secrets.username}}
+            git add .
+            git commit -m "new commit from ${{github.event.pusher.name}}, commit no: $GITHUB_RUN_NUMBER"
+        
       - name: Push changes
         if: ${{needs.build.outputs.output_test == 'success'}}
         continue-on-error: true
         uses: ad-m/github-push-action@master
         id: push_changes
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
-        
-      - name: update Comment on Deployment
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            branch: ${{ github.ref }}
+
+      - name: update Comment on Readme push
         run: |
-          printf "deployment output: ${{toJson(steps.deployment)}}\n
-          readme output: ${{toJson(steps.readme)}}\n
-          pullRequest output: ${{toJson(steps.pull_request)}}\n
-          commit output: ${{toJson(steps.commit_change)}}\n
-          push output: ${{toJson(steps.push_changes)}}\n
-          pages published at: ${{ steps.deployment.outputs.page_url }}"
+              readme output: ${{toJson(steps.readme)}}\n
+              pullRequest output: ${{toJson(steps.pull_request)}}\n
+              commit output: ${{toJson(steps.commit_change)}}\n
+              push output: ${{toJson(steps.push_changes)}}\n
