@@ -14,9 +14,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:                
-      contents: write           
-      pull-requests: write 
     outputs:
       output_test: ${{ steps.test.outcome }}
       output_lint: ${{ steps.linter.outcome }}
@@ -87,9 +84,10 @@ jobs:
     needs: build
 
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
+    permissions:         
+      pull-requests: write 
       contents: read
-      pages: write      # to deploy to Pages
+      pages: write 
       id-token: write   # to verify the deployment originates from an appropriate source
 
     concurrency:
