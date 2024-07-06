@@ -1,7 +1,2 @@
-# Hello World Page
-
-This project is a simple express "Hello World" webpage with a beautiful color-changing effect.
-
-## Installation
-
-To use this webpage, install express, and run "node app.js"
+![Test](https://img.shields.io/badge/Test-success-93b023?&style=for-the-badge) | 
+      ![Lint](https://img.shields.io/badge/Lint-success-blue?&style=for-the-badge)
