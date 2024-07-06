@@ -2,4 +2,4 @@
     ![Lint](https://img.shields.io/badge/Lint-success-blue?&style=for-the-badge)
 
 
-    ![pages published here] (https://aytuns.github.io/hello_node/)
+    Pages Published [HERE](https://aytuns.github.io/hello_node/)
