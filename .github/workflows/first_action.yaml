@@ -1,14 +1,24 @@
 name: First CICD
-on: [push, pull_request]
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
 
 env:
-    issue_number: ${{ github.issue.number }}
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-
+    GITHUB_RUN_ID: ${{github.run_id}}
+    GITHUB_RUN_NUMBER: ${{github.run_number}}
+    GITHUB_ACTOR: ${{github.actor}}
+    GITHUB_WORKFLOW: ${{github.workflow}}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:                
+      contents: write           
+      pull-requests: write 
+    outputs:
+      output1: ${{ steps.test.outcome }}
 
     steps:
       - uses: actions/checkout@v4
@@ -21,61 +31,137 @@ jobs:
       - name: Install Node.js dependencies
         run: npm ci
 
-      - name: Install express
-        run: npm install express
+      - name: Install dependencies
+        run: |
+            npm install -g express-generator
+            npm install express 
+            npm install
+            npm install --save-dev jest supertest
 
-      - name: Run linters
+      - name: Run linter
         id: linter
-        uses: wearerequired/lint-action@v2
+        uses: super-linter/super-linter@v6.6.0
         continue-on-error: true
-        with:
-          eslint: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_JAVASCRIPT_ES: true
+          VALIDATE_HTML: true
 
       - name: Run build
         id: build
         continue-on-error: true
         run: npm run build --if-present
         
-
       - name: Run test
         id: test
         continue-on-error: true
-        run: npm test
+        run: npm run test
 
       - name: Archive Artifact
-        id: archive-artifact
+        id: archive_artifact
         uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
           name: hello-artifact
-          path: archive_folder
+          path: | 
+            *
+            !.**
+            !node_modules
+          retention-days: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+        
+      - name: UPDATE README
+        id: readme
+        continue-on-error: true
+        run: |
+          echo "![Test](https://img.shields.io/badge/Test-${{steps.test.outcome}}-93b023?&style=for-the-badge) | 
+                ![Lint](https://img.shields.io/badge/Lint-${{steps.linter.outcome}}-blue?&style=for-the-badge)" > README.md
+      
           
-      - name: Create an issue
-        uses: actions-ecosystem/action-create-issue@v1
-        if: ${{ failure() }}      
+      - name: pull-request
+        uses: repo-sync/pull-request@v2
+        id: pull_request
+        continue-on-error: true
         with:
-          github_token: ${{ secrets.github_token }}
-          title: 'Error in workflow: ${{ github.workflow }}'
-          body: |
-            Error message: ${{ github.actions.error.message }}
-            PR: ${{ github.pull_request.html_url }}
-            Workflow: ${{ github.workflow.html_url }}
-            labels: 'error, workflow'
-            issue_number: env.issue_number
+          destination_branch: "main"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Assign an issue        
-        uses: takanome-dev/assign-issue-action@v2.1.1
+      - name: commit
+        id: commit_change
+        continue-on-error: true
+        run: |
+          git config --global user.email ${{secrets.email}}
+          git config --global user.name ${{secrets.username}}
+          git add .
+          git commit -m "new commit from ${{github.event.pusher.name}}, commit no: $GITHUB_RUN_NUMBER"
+        
+      - name: Push changes
+        if: ${{steps.test.outcome == 'success'}}
+        continue-on-error: true
+        uses: ad-m/github-push-action@master
+        id: push_changes
         with:
-          github_token: env.github_token
-          trigger: env.issue_number
-          already_assigned_comment: 'This issue is already assigned to someone'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
 
-      - name: Delete an issue
-        uses: actions/delete-issue@v2
-        if: github.issue.state == 'closed' || github.issue.labels.contains('resolved')
+      - name: update Comments
+        run: |
+          printf "linter output: ${{toJson(steps.linter)}}\n
+          test output: ${{toJson(steps.test)}}\n
+          build output: ${{toJson(steps.build)}}\n
+          artifact output: ${{toJson(steps.archive_artifact)}}\n
+          readme output: ${{toJson(steps.readme)}}\n
+          pullRequest output: ${{toJson(steps.pull_request)}}\n
+          commit output: ${{toJson(steps.commit_change)}}\n
+          pushChanges output: ${{toJson(steps.push_changes)}}\n
+          Welcome, new contributor!\n
+          Run ID: $GITHUB_RUN_ID\n
+          Run NUmber: $GITHUB_RUN_NUMBER\n
+          Actor: $GITHUB_ACTOR\n
+          Workflow: $GITHUB_WORKFLOW"   
+
+  # Deploy job
+  deploy:
+    needs: build
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      contents: read
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-         issue_number: ${{ github.issue.number }}
+          name: github-pages
+          path: './public'
 
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
-      # - name: Run the app
-      #   run: node app.js
+      - name: update Comment on Deployment
+        run: |
+          printf "publish page: ${{ steps.deployment.outputs.page_url }}"
